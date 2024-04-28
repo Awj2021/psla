@@ -57,7 +57,7 @@ parser.add_argument("--wa", help='if do weight averaging', type=ast.literal_eval
 parser.add_argument("--wa_start", type=int, default=16, help="which epoch to start weight averaging")
 parser.add_argument("--wa_end", type=int, default=30, help="which epoch to end weight averaging")
 
-parser.add_argument("--n_class", type=int, default=527, help="number of classes")
+parser.add_argument("--n_class", type=int, default=2, help="number of classes")
 parser.add_argument('--save_model', help='save the model or not', type=ast.literal_eval)
 parser.add_argument("--eff_b", type=int, default=0, help="which efficientnet to use, the larger number, the more complex")
 parser.add_argument('--esc', help='If doing an ESC exp, which will have some different behabvior', type=ast.literal_eval, default='False')
@@ -67,7 +67,7 @@ parser.add_argument('--timem', help='time mask max length', type=int, default=0)
 parser.add_argument("--mixup", type=float, default=0, help="how many (0-1) samples need to be mixup during training")
 parser.add_argument("--lr_patience", type=int, default=2, help="how many epoch to wait to reduce lr if mAP doesn't improve")
 parser.add_argument("--att_head", type=int, default=4, help="number of attention heads")
-parser.add_argument('--bal', help='if use balance sampling', type=ast.literal_eval)
+parser.add_argument('--bal', help='if use balance sampling', type=ast.literal_eval, default='False')
 
 args = parser.parse_args()
 
@@ -101,7 +101,8 @@ if args.data_eval != None:
     eval_loader = torch.utils.data.DataLoader(
         dataloaders.AudiosetDataset(args.data_eval, label_csv=args.label_csv, audio_conf=val_audio_conf),
         batch_size=args.batch_size*2, shuffle=False, num_workers=args.num_workers, pin_memory=True)
-
+# TODO: add the training and validation set for LJS. In the file AudiosetDataset.py.
+    
 if args.model == 'efficientnet':
     audio_model = models.EffNetAttention(label_dim=args.n_class, b=args.eff_b, pretrain=args.impretrain, head_num=args.att_head)
 elif args.model == 'resnet':

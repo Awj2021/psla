@@ -293,6 +293,7 @@ def validate_ensemble(args, epoch):
     stats = calculate_stats(ensemble_predictions, target)
     return stats
 
+# TODO: change here into ema method.
 def validate_wa(audio_model, val_loader, args, start_epoch, end_epoch):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     exp_dir = args.exp_dir

@@ -12,7 +12,7 @@ import os
 # dataset downloaded from https://zenodo.org/record/4060432#.YXXR0tnMLfs
 # please change it to your FSD50K dataset path
 # the data organization might change with versioning, the code is tested early 2021
-fsd_path = '/data/sls/scratch/yuangong/dataset/FSD50K/'
+fsd_path = '../../dataset'
 
 # convert all samples to 16kHZ
 print('Now converting all FSD50K audio to 16kHz, this may take dozens of minutes.')
