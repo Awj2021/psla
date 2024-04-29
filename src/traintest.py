@@ -16,8 +16,12 @@ from torch import nn
 import numpy as np
 import pickle
 from torch.cuda.amp import autocast,GradScaler
+import ipdb
+import wandb
+
 
 def train(audio_model, train_loader, test_loader, args):
+    wandb.init(project='audio-ssl', name ='psla_LJS')
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print('running on ' + str(device))
     torch.set_grad_enabled(True)
@@ -108,12 +112,19 @@ def train(audio_model, train_loader, test_loader, args):
             loss.backward()
             optimizer.step()
 
-            # record loss
             loss_meter.update(loss.item(), B)
             batch_time.update(time.time() - end_time)
             per_sample_time.update((time.time() - end_time)/audio_input.shape[0])
             per_sample_dnn_time.update((time.time() - dnn_start_time)/audio_input.shape[0])
 
+            # record loss
+            wandb.log({
+                "Epoch": epoch,
+                "loss": loss.item(),
+                "Per Sample Total Time": per_sample_time.avg,
+                "Per Sample Data Time": per_sample_data_time.avg,
+                "Per Sample DNN Time": per_sample_dnn_time.avg,
+            })
             print_step = global_step % args.n_print_steps == 0
             early_print_step = epoch == 0 and global_step % (args.n_print_steps/10) == 0
             print_step = print_step or early_print_step
@@ -150,6 +161,18 @@ def train(audio_model, train_loader, test_loader, args):
         middle_rs = [stat['recalls'][int(len(stat['recalls'])/2)] for stat in stats]
         average_precision = np.mean(middle_ps)
         average_recall = np.mean(middle_rs)
+
+        wandb.log({
+            "Epoch": epoch,
+            "Validation mAP": mAP,
+            "Validation AUC": mAUC,
+            "Validation Avg Precision": average_precision,
+            "Validation Avg Recall": average_recall,
+            "valid_loss": valid_loss,
+            "ensemble_mAP": ensemble_mAP,
+            "ensemble_mAUC": ensemble_mAUC,
+            "lr": optimizer.param_groups[0]['lr']
+        })
 
         if main_metrics == 'mAP':
             print("mAP: {:.6f}".format(mAP))

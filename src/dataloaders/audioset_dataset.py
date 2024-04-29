@@ -8,15 +8,16 @@ import torch
 import torch.nn.functional
 from torch.utils.data import Dataset
 import random
+import ipdb
 
 def make_index_dict(label_csv):
     index_lookup = {}
-    with open(label_csv, 'r') as f:
+    with open(label_csv, 'r') as f: # label_csv is the csv
         csv_reader = csv.DictReader(f)
         line_count = 0
         for row in csv_reader:
             index_lookup[row['mid']] = row['index']
-            line_count += 1
+            line_count += 1 # 
     return index_lookup
 
 def make_name_dict(label_csv):
@@ -144,14 +145,18 @@ class AudiosetDataset(Dataset):
         nframes is an integer
         """
         # do mix-up for this sample (controlled by the given mixup rate)
+        # ipdb.set_trace()
+        # TODO: why we need the mixup here?
+
+        # For the dataset of LJS for anti spoofing, the mixup is not needed.
         if random.random() < self.mixup:
-            datum = self.data[index]
+            datum = self.data[index]  # read the sample.
             # find another sample to mix, also do balance sampling
             # sample the other sample from the multinomial distribution, will make the performance worse
             # mix_sample_idx = np.random.choice(len(self.data), p=self.sample_weight_file)
             # sample the other sample from the uniform distribution
             mix_sample_idx = random.randint(0, len(self.data)-1)
-            mix_datum = self.data[mix_sample_idx]
+            mix_datum = self.data[mix_sample_idx]   # randomly select another sample to mix.
             # get the mixed fbank
             fbank, mix_lambda = self._wav2fbank(datum['wav'], mix_datum['wav'])
             # initialize the label
@@ -165,14 +170,15 @@ class AudiosetDataset(Dataset):
             label_indices = torch.FloatTensor(label_indices)
         # if not do mixup
         else:
-            datum = self.data[index]
+            datum = self.data[index]  # {'wav': '../../dataset/FSD50K.dev_audio_16k/210697.wav', 'labels': '/m/07brj,/m/0l14md,/m/04szw,/m/04rlf'}
+            # ipdb.set_trace()
             label_indices = np.zeros(self.label_num)
             fbank, mix_lambda = self._wav2fbank(datum['wav'])
-            for label_str in datum['labels'].split(','):
-                label_indices[int(self.index_dict[label_str])] = 1.0
+            # one-hot encoding for the labels.
+            # for label_str in datum['labels'].split(','):
 
+            label_indices[int(self.index_dict[datum['labels']])] = 1.0
             label_indices = torch.FloatTensor(label_indices)
-
         # SpecAug, not do for eval set
         freqm = torchaudio.transforms.FrequencyMasking(self.freqm)
         timem = torchaudio.transforms.TimeMasking(self.timem)
@@ -199,9 +205,8 @@ class AudiosetDataset(Dataset):
             fbank = torch.roll(fbank, np.random.randint(-10, 10), 0)
 
         # the output fbank shape is [time_frame_num, frequency_bins], e.g., [1024, 128]
-        return fbank, label_indices
+        return fbank, label_indices  # return the fbank and label.
 
     def __len__(self):
         return len(self.data)
-    
 
